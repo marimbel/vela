@@ -1,0 +1,134 @@
+{
+  "torso": {
+    "title": "Inside the Torso",
+    "note": "Illustrative layout of a typical humanoid torso, sized to fit this robot's shell. It is not an exact Unitree G1 teardown: the simulation model only includes the outer shell.",
+    "components": {
+      "shell_front": {
+        "title": "Front Cover",
+        "group": "Enclosure",
+        "summary": "The chest cover protects the electronics and gives the robot its look.",
+        "role": "Keeps out dust, fingers and debris, spreads the force of light impacts, and acts as a mounting surface for the chest panel.",
+        "parts": ["Injection-molded engineering plastic (PC/ABS or nylon) or thin aluminum", "Threaded inserts for screws", "Internal ribs for stiffness", "Vents where the cooling air enters"],
+        "connects": "Screws onto the internal chassis. It doesn't carry the robot's weight; the frame does.",
+        "sim": "In the model this is a visual mesh plus a collision mesh. Its mass is folded into the torso link's total mass."
+      },
+      "shell_back": {
+        "title": "Back Cover",
+        "group": "Enclosure",
+        "summary": "The rear cover. It usually opens for battery swaps and service access.",
+        "role": "Gives access to the battery, connectors and the emergency-stop circuit without taking the robot apart.",
+        "parts": ["Molded plastic or sheet aluminum", "Latches or captive screws", "Exhaust vents behind the fan"],
+        "connects": "Mounts to the back of the chassis rails.",
+        "sim": "Like the front cover: visual and collision geometry only, no separate physics body."
+      },
+      "chassis": {
+        "title": "Internal Chassis (Spine)",
+        "group": "Structure",
+        "summary": "The metal skeleton inside the torso. It carries every load between the waist, shoulders and head.",
+        "role": "Holds the arm motors at the shoulders and bolts to the waist actuator below. Everything else in the torso mounts to it.",
+        "parts": ["CNC-machined aluminum alloy rails (6061/7075)", "Shoulder cross-plate", "Waist mounting flange", "Standoffs for circuit boards"],
+        "connects": "Waist joint below, both shoulder-pitch motors on the sides, head mount on top.",
+        "sim": "The frame is why the torso is modeled as one rigid body: nothing inside it flexes enough to matter for control."
+      },
+      "battery": {
+        "title": "Battery Pack",
+        "group": "Power",
+        "summary": "The robot's energy source and usually its heaviest internal part. Placing it low helps balance.",
+        "role": "Stores energy for every motor and computer. Its capacity sets how long the robot can run between charges.",
+        "parts": ["Cylindrical lithium-ion cells (e.g. 21700 format) wired in series-parallel", "Nickel bus strips spot-welded between cells", "Flame-retardant enclosure", "Thermistors for temperature sensing", "High-current connector"],
+        "connects": "Feeds the power distribution board through the BMS. Often hot-swappable through the back cover.",
+        "sim": "Its mass sits low in the torso, which lowers the robot's center of mass. Change the battery's mass in the model and you change how the robot balances."
+      },
+      "bms": {
+        "title": "Battery Management System (BMS)",
+        "group": "Power",
+        "summary": "The battery's guardian: a circuit board that watches every cell.",
+        "role": "Measures each cell's voltage and temperature, balances the cells, estimates remaining charge, and disconnects the pack on over-current, over-heating or deep discharge.",
+        "parts": ["Cell-monitoring IC", "MOSFET disconnect switches", "Current-sense shunt resistor", "Microcontroller that reports state of charge"],
+        "connects": "Sits on the pack. It reports to the main control computer over CAN or UART.",
+        "sim": "Not physically simulated, but battery level can be fed to a high-level planner, for example 'return to charger when below 20%'."
+      },
+      "pdb": {
+        "title": "Power Distribution Board",
+        "group": "Power",
+        "summary": "Splits battery power into the separate voltage rails the robot needs.",
+        "role": "Sends high-voltage power to the joint motors and steps it down to lower voltages for the computers, sensors and fans.",
+        "parts": ["DC-DC converters (buck regulators)", "Thick copper bus bars and traces", "Fuses and current sensors", "Bulk capacitors that absorb current spikes when motors brake"],
+        "connects": "Battery in. Out: motor power trunks to each limb, low-voltage rails to the compute boards.",
+        "sim": "Simulation assumes perfect power. On hardware, voltage sag during hard moves can reset a computer: a classic sim-to-real surprise."
+      },
+      "estop": {
+        "title": "Safety Circuit (E-Stop)",
+        "group": "Power",
+        "summary": "A hardware kill switch that cuts motor power instantly, no matter what the software is doing.",
+        "role": "When the emergency stop is pressed (on the robot or a wireless remote), a relay physically cuts power to the motors.",
+        "parts": ["Safety relay or contactor", "Red mushroom-head stop button", "Wireless e-stop receiver", "Watchdog circuit that trips if the controller stops responding"],
+        "connects": "Sits between the power distribution board and the motor power trunks.",
+        "sim": "Simulation has no e-stop, which is exactly why every real robot test needs one. A policy that works in simulation can still behave unexpectedly on hardware."
+      },
+      "control_computer": {
+        "title": "Real-Time Control Computer",
+        "group": "Compute",
+        "summary": "Runs the fast, time-critical loops that keep the robot upright.",
+        "role": "Reads every joint encoder and IMU, estimates the robot's state, and sends motor commands hundreds of times per second, with strict timing.",
+        "parts": ["Embedded CPU (ARM or x86) running a real-time OS or kernel", "RAM and flash storage", "Field-bus controller (EtherCAT or CAN) for talking to the motors", "Ethernet ports"],
+        "connects": "Talks to all 29 joint motors over the field bus. Receives joint targets from the AI computer.",
+        "sim": "In simulation the physics engine plays the role of the motors and sensors, and the same control code can run against it."
+      },
+      "ai_compute": {
+        "title": "AI Compute Module",
+        "group": "Compute",
+        "summary": "The robot's AI brain. A Jetson-class module on a carrier board runs the neural networks.",
+        "role": "Runs perception (detection, segmentation, depth processing), learned control policies and planning, using a GPU built for low-power inference.",
+        "parts": ["System-on-module: CPU + GPU + deep-learning accelerators + shared memory", "Carrier board with camera inputs (MIPI CSI), PCIe, USB and Ethernet", "Heatsink with fins, often with a heat pipe"],
+        "connects": "Cameras and LiDAR in. Joint targets out to the real-time control computer, about 50 times a second.",
+        "sim": "Policies are trained on desktop GPUs in simulation, exported (for example to ONNX), then optimized (for example with TensorRT) to run on this module."
+      },
+      "accelerator": {
+        "title": "AI Accelerator (NPU / TPU)",
+        "group": "Compute",
+        "summary": "An optional add-on chip for running neural networks very efficiently.",
+        "role": "Takes over specific models, such as an always-on detector, so the main GPU stays free for other work. Uses less power per inference.",
+        "parts": ["M.2 card with a neural processing chip", "Low-precision (int8) math units", "On-chip memory"],
+        "connects": "Plugs into the carrier board's M.2 / PCIe slot.",
+        "sim": "To run on it, models are usually quantized (from 32-bit floats to 8-bit integers). Check that accuracy holds after quantizing."
+      },
+      "cooling": {
+        "title": "Cooling Fan",
+        "group": "Thermal",
+        "summary": "Moves air through the torso so the computers and power electronics don't overheat.",
+        "role": "Pulls air in through the front vents, past the heatsinks, and out the back.",
+        "parts": ["Brushless DC fan", "Fan shroud", "Dust filter mesh", "Temperature-controlled speed (PWM)"],
+        "connects": "Powered from a low-voltage rail. Its speed is set from temperature sensors on the compute boards.",
+        "sim": "Heat isn't simulated, but on hardware, thermal throttling slows down the AI computer and can delay control policies."
+      },
+      "imu": {
+        "title": "Torso IMU Board",
+        "group": "Sensing",
+        "summary": "A small board with a gyroscope and accelerometer. It's the robot's sense of balance.",
+        "role": "Measures how the torso is rotating and accelerating, hundreds of times per second.",
+        "parts": ["6-axis MEMS IMU chip (3-axis gyro + 3-axis accelerometer)", "Rigid, vibration-damped mount", "Factory calibration data"],
+        "connects": "Bolted firmly to the chassis. Streams data to the real-time control computer.",
+        "sim": "This matches the real 'imu_in_torso' sensor site in the model. Its simulated readings include noise, just like real hardware."
+      },
+      "comms": {
+        "title": "Communications Hub",
+        "group": "Compute",
+        "summary": "The robot's internal network and its link to the outside world.",
+        "role": "Connects the computers to each other, and the robot to Wi-Fi or a tether for monitoring, teleoperation and cloud AI calls.",
+        "parts": ["Ethernet switch chip", "Wi-Fi / Bluetooth module with antennas", "Field-bus hub ports for the limbs"],
+        "connects": "Links the AI computer, the real-time computer, the head sensors and the wireless link.",
+        "sim": "VELA's agent orchestrator would talk to the robot through a link like this. Network latency is why the LLM agents send high-level skill commands, never motor torques."
+      },
+      "harness": {
+        "title": "Wiring Harness",
+        "group": "Power",
+        "summary": "The robot's nervous system and blood vessels: power and data cables running to every limb.",
+        "role": "Carries motor power (orange) and data (blue) from the torso to the shoulders, down through the waist, and up to the head.",
+        "parts": ["High-flex silicone-jacketed power wires", "Shielded twisted-pair data cables", "Locking connectors", "Cable routing through hollow joint shafts"],
+        "connects": "From the power board and communications hub out to every limb.",
+        "sim": "Cables are left out of the simulation. On the real robot, cable stiffness and wear in joints that move a lot are a common reliability issue."
+      }
+    }
+  }
+}

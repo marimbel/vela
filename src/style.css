@@ -129,6 +129,23 @@ code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.85em
 }
 .hint.gone { opacity: 0; }
 
+/* Teardown */
+:root { --enclosure: #9fb0c8; --power: #ffc24a; --thermal: #7fe3c4; }
+.chip.enclosure, .idx-title.enclosure { color: var(--enclosure); }
+.chip.power, .idx-title.power { color: var(--power); }
+.chip.thermal, .idx-title.thermal { color: var(--thermal); }
+.layer.on.teardown { border-color: var(--power); color: var(--power); background: rgba(255, 194, 74, 0.12); }
+.index .back { color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+.panel ul.built { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.55; color: #c3cfe2; }
+.panel ul.built li { margin-bottom: 3px; }
+.panel .note { margin-top: 16px; font-size: 12px; color: var(--muted); font-style: italic; }
+.panel .cta {
+  margin-top: 18px; width: 100%; padding: 11px; border-radius: 10px; font-weight: 600;
+  border: 1px solid var(--power); background: rgba(255, 194, 74, 0.12); color: var(--power);
+}
+.panel .cta:hover { background: rgba(255, 194, 74, 0.22); }
+.marker-label.teardown { color: var(--power); pointer-events: none; }
+
 /* Marker labels */
 .marker-label {
   font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px; white-space: nowrap;

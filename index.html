@@ -30,9 +30,12 @@
         <button id="shove" title="Big sideways push: the robot falls (S)">Shove</button>
       </div>
       <label class="tb-group slider" title="Exploded view (E)">
-        <span>Explode</span>
+        <span id="explode-label">Explode</span>
         <input id="explode" type="range" min="0" max="1" step="0.01" value="0" />
       </label>
+      <div class="tb-group">
+        <button id="teardown" class="layer teardown" title="Open the torso and see the components inside (T)">Open torso</button>
+      </div>
       <div class="tb-group layers">
         <button data-layer="actuation" class="layer actuation">Actuators</button>
         <button data-layer="sensing" class="layer sensing">Sensors</button>

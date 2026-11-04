@@ -22,6 +22,7 @@ VELA is a full-body humanoid robot that lives entirely in your browser. The proj
 | Module | Description |
 |---|---|
 | 🦾 **Anatomy Explorer** | Clickable 3D humanoid with highlighted parts, info panels, and an animated exploded view |
+| 🔧 **Torso Teardown** | The torso shell splits open and 12 internal components fan out (battery, BMS, power distribution, e-stop, real-time computer, AI compute module, AI accelerator, cooling, IMU, comms hub, chassis, wiring). Click each one to see what it's built from |
 | 🧩 **System Layers** | Toggle structure, actuation, sensing, and compute overlays |
 | 🧠 **Compute & AI Pipeline** | Animated data flow: perception → planning → policy → torque commands, with the rate and hardware each stage runs on |
 | 🌍 **Physics Sandbox** | MuJoCo-powered world with gravity, contact, friction, and objects you can interact with |
@@ -109,9 +110,11 @@ vela/
 │   ├── viewer/
 │   │   ├── renderer.js         # Three.js scene, MuJoCo → Three.js sync, exploded view
 │   │   ├── layers.js           # actuator / sensor / compute overlay markers
+│   │   ├── teardown.js         # torso teardown: clipped shell halves + internal components
 │   │   └── picking.js          # raycast hover + click selection
 │   └── explainer/
 │       ├── parts.json          # explainer text for every part and marker
+│       ├── teardown.json       # explainer text for the torso's internal components
 │       └── panel.js            # info panel + live telemetry
 ├── public/
 │   └── models/unitree_g1/      # MJCF + meshes + manifest.json
@@ -134,6 +137,7 @@ Planned for later phases: `src/control/` (PD + ONNX policies), `src/agents/` (ag
 | Small push (robot recovers) | **N** or **Nudge** |
 | Big push (robot falls) | **S** or **Shove** |
 | Exploded view | **E** or the **Explode** slider |
+| Open the torso | **T**, **Open torso**, or *Open it up* in the Torso panel (the slider then scrubs the teardown) |
 | Overlay layers | **Actuators**, **Sensors**, **Compute** buttons |
 | See-through shell | **X** or **X-ray** |
 
@@ -181,6 +185,8 @@ Pushing to `main` builds the site and deploys it to GitHub Pages via `.github/wo
 - [x] **Phase 1:** Vite + Three.js site deployed to GitHub Pages
 - [x] **Phase 2:** Humanoid loaded in MuJoCo WASM, standing under PD control
 - [x] **Phase 3:** Anatomy Explorer (picking, info panels, exploded view, system layers)
+- [x] **Phase 3b:** Torso teardown (internal components explained)
+- [ ] **Phase 3c:** Teardowns for the head, legs and arm actuators
 - [ ] **Phase 4:** Compute & AI Pipeline explainer
 - [ ] **Phase 5:** Physics Sandbox with interactive objects
 - [ ] **Phase 6:** Trained walking/reaching policies exported to ONNX

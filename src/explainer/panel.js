@@ -1,5 +1,6 @@
 // Info panel: explains the selected part and shows live physics telemetry.
 import content from './parts.json';
+import teardown from './teardown.json';
 
 const RAD2DEG = 180 / Math.PI;
 
@@ -25,8 +26,27 @@ export function createPanel(root, sim) {
   const actuatorForJoint = new Map();
   for (let a = 0; a < model.nu; a++) actuatorForJoint.set(model.actuator_trnid[a * 2], a);
 
+  function showTeardown(sel) {
+    const info = teardown.torso.components[sel.key];
+    if (!info) return;
+    current = { ...sel, info };
+    root.innerHTML = `
+      <button class="close" aria-label="Close">×</button>
+      <div class="chip ${info.group.toLowerCase()}">Inside the torso · ${info.group}</div>
+      <h2>${info.title}</h2>
+      <p class="summary">${info.summary}</p>
+      <section><h3>What it does</h3><p>${info.role}</p></section>
+      <section><h3>What it's built from</h3><ul class="built">${info.parts.map((p) => `<li>${p}</li>`).join('')}</ul></section>
+      <section><h3>How it connects</h3><p>${info.connects}</p></section>
+      <section><h3>In simulation &amp; AI</h3><p>${info.sim}</p></section>
+      <p class="note">${teardown.torso.note}</p>`;
+    root.querySelector('.close').onclick = () => sel.onClose?.();
+    root.classList.add('open');
+  }
+
   function show(sel) {
     if (!sel) { root.classList.remove('open'); current = null; return; }
+    if (sel.teardown) return showTeardown(sel);
     const info = sel.marker ? content.markers[sel.key] : content.parts[sel.key];
     if (!info) return;
     current = { ...sel, info };
@@ -49,8 +69,10 @@ export function createPanel(root, sim) {
       <div class="telemetry" id="telemetry"></div>
       <section><h3>How it's built</h3><p>${info.build}</p></section>
       <section><h3>In simulation</h3><p>${info.sim}</p></section>
-      <section><h3>Where the AI comes in</h3><p>${info.ai}</p></section>`;
+      <section><h3>Where the AI comes in</h3><p>${info.ai}</p></section>
+      ${sel.action ? `<button class="cta">${sel.action.label}</button>` : ''}`;
     root.querySelector('.close').onclick = () => sel.onClose?.();
+    if (sel.action) root.querySelector('.cta').onclick = sel.action.onClick;
     root.classList.add('open');
     update();
   }
@@ -61,7 +83,7 @@ export function createPanel(root, sim) {
   }
 
   function update() {
-    if (!current) return;
+    if (!current || current.teardown) return;
     const el = root.querySelector('#telemetry');
     if (!el) return;
     const { data } = sim;
