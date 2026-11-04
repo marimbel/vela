@@ -26,8 +26,6 @@ VELA is a full-body humanoid robot that lives entirely in your browser. The proj
 | 🧩 **System Layers** | Toggle structure, actuation, sensing, and compute overlays |
 | 🧠 **Deep Learning tab** | The layered model stack (LLM orchestrator → sub-agents → learned models → control), each model's requirements (rate, latency, size, hardware, training data), a size-vs-loop-rate chart, a step-by-step orchestrator task trace, the skill API and the training-to-deployment pipeline |
 | 🌍 **Simulation tab** | MuJoCo world with a table, objects, a block tower, dominoes and a ramp. Grab and throw objects with the mouse, switch gravity (Earth / Mars / Moon / Zero-G), change friction, slow motion, live physics stats |
-| 🧠 **Compute & AI Pipeline** | Animated data flow: perception → planning → policy → torque commands, with the rate and hardware each stage runs on |
-| 🌍 **Physics Sandbox** | MuJoCo-powered world with gravity, contact, friction, and objects you can interact with |
 | 🤖 **Agent Console** | Type a task ("put the cube on the shelf") and watch the orchestrator plan, delegate, and verify |
 | ⏯️ **Replay Mode** | Pre-recorded agent runs, so the demo works without a live backend |
 
