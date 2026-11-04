@@ -6,8 +6,9 @@ import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 const MESH = 7; // mjGEOM_MESH
 const VISUAL_GROUP = 2; // visual geoms in the G1 model
 
-export function createViewer(container, sim) {
+export function createViewer(container, sim, opts = {}) {
   const { model } = sim;
+  const { camera: camPos = [1.9, 1.25, 1.9], target: camTarget = [0, 0.75, 0], primitives = false, shadowExtent = 2 } = opts;
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -25,12 +26,12 @@ export function createViewer(container, sim) {
   scene.fog = new THREE.Fog(0x0b1220, 6, 14);
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 50);
-  camera.position.set(1.9, 1.25, 1.9);
+  camera.position.set(...camPos);
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 0.75, 0);
+  controls.target.set(...camTarget);
   controls.enableDamping = true;
   controls.minDistance = 0.6;
-  controls.maxDistance = 6;
+  controls.maxDistance = 8;
   controls.maxPolarAngle = Math.PI * 0.495;
 
   // Lights
@@ -39,7 +40,8 @@ export function createViewer(container, sim) {
   sun.position.set(2, 4, 2.5);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -2, right: 2, top: 2, bottom: -2, near: 0.5, far: 10 });
+  const se = shadowExtent;
+  Object.assign(sun.shadow.camera, { left: -se, right: se, top: se, bottom: -se, near: 0.5, far: 12 });
   scene.add(sun);
   const rim = new THREE.DirectionalLight(0x7fb8ff, 1.0);
   rim.position.set(-3, 2, -2);
@@ -103,6 +105,38 @@ export function createViewer(container, sim) {
     pickables.push(mesh);
   }
 
+  // Simple shapes (boxes, spheres, cylinders, capsules) for scenes with props.
+  // Skips planes (the floor is drawn separately) and group-3 collision-only geoms.
+  const propMeshes = [];
+  if (primitives) {
+    for (let i = 0; i < model.ngeom; i++) {
+      const type = model.geom_type[i];
+      if (type === MESH || type === 0 || model.geom_group[i] >= 3) continue;
+      const s = model.geom_size;
+      let g;
+      if (type === 2) g = new THREE.SphereGeometry(s[i * 3], 28, 18);
+      else if (type === 3) g = new THREE.CapsuleGeometry(s[i * 3], 2 * s[i * 3 + 1], 8, 20).rotateX(Math.PI / 2);
+      else if (type === 4) g = new THREE.SphereGeometry(1, 24, 16).scale(s[i * 3], s[i * 3 + 1], s[i * 3 + 2]);
+      else if (type === 5) g = new THREE.CylinderGeometry(s[i * 3], s[i * 3], 2 * s[i * 3 + 1], 28).rotateX(Math.PI / 2);
+      else if (type === 6) g = new THREE.BoxGeometry(2 * s[i * 3], 2 * s[i * 3 + 1], 2 * s[i * 3 + 2]);
+      else continue;
+      const matId = model.geom_matid[i];
+      const rgba = matId >= 0 ? model.mat_rgba.slice(matId * 4, matId * 4 + 4) : model.geom_rgba.slice(i * 4, i * 4 + 4);
+      const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(rgba[0], rgba[1], rgba[2]), roughness: 0.55, metalness: 0.1 });
+      const mesh = new THREE.Mesh(g, material);
+      mesh.castShadow = mesh.receiveShadow = true;
+      mesh.position.fromArray(model.geom_pos, i * 3);
+      const q = model.geom_quat;
+      mesh.quaternion.set(q[i * 4 + 1], q[i * 4 + 2], q[i * 4 + 3], q[i * 4]);
+      const bodyId = model.geom_bodyid[i];
+      const ja = model.body_jntadr[bodyId];
+      const free = ja >= 0 && model.jnt_type[ja] === 0 && sim.name('mjOBJ_BODY', bodyId) !== 'pelvis';
+      mesh.userData = { bodyId, geomId: i, prop: free };
+      bodies[bodyId].add(mesh);
+      if (free) propMeshes.push(mesh);
+    }
+  }
+
   // Exploded view: each body slides away from its parent, so the tree spreads out.
   const explodeOffsets = Array.from({ length: model.nbody }, () => new THREE.Vector3());
   let explode = 0;
@@ -136,8 +170,9 @@ export function createViewer(container, sim) {
   resize();
 
   return {
-    scene, camera, renderer, controls, world, bodies, pickables,
+    scene, camera, renderer, controls, world, bodies, pickables, propMeshes, container,
     explodeOffsets,
+    resize,
     setExplode(v) { explode = v; },
     getExplode() { return explode; },
     render() {

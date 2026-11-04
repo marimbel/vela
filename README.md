@@ -24,6 +24,8 @@ VELA is a full-body humanoid robot that lives entirely in your browser. The proj
 | 🦾 **Anatomy Explorer** | Clickable 3D humanoid with highlighted parts, info panels, and an animated exploded view |
 | 🔧 **Torso Teardown** | The torso shell splits open and 12 internal components fan out (battery, BMS, power distribution, e-stop, real-time computer, AI compute module, AI accelerator, cooling, IMU, comms hub, chassis, wiring). Click each one to see what it's built from |
 | 🧩 **System Layers** | Toggle structure, actuation, sensing, and compute overlays |
+| 🧠 **Deep Learning tab** | The layered model stack (LLM orchestrator → sub-agents → learned models → control), each model's requirements (rate, latency, size, hardware, training data), a size-vs-loop-rate chart, a step-by-step orchestrator task trace, the skill API and the training-to-deployment pipeline |
+| 🌍 **Simulation tab** | MuJoCo world with a table, objects, a block tower, dominoes and a ramp. Grab and throw objects with the mouse, switch gravity (Earth / Mars / Moon / Zero-G), change friction, slow motion, live physics stats |
 | 🧠 **Compute & AI Pipeline** | Animated data flow: perception → planning → policy → torque commands, with the rate and hardware each stage runs on |
 | 🌍 **Physics Sandbox** | MuJoCo-powered world with gravity, contact, friction, and objects you can interact with |
 | 🤖 **Agent Console** | Type a task ("put the cube on the shelf") and watch the orchestrator plan, delegate, and verify |
@@ -103,10 +105,16 @@ Each robot model in this project is checked against the following before use:
 vela/
 ├── index.html
 ├── src/
-│   ├── main.js                 # app entry: UI wiring, selection, main loop
+│   ├── main.js                 # app entry: loads the engine once, routes between tabs
 │   ├── style.css
+│   ├── tabs/
+│   │   ├── anatomy.js          # Anatomy tab: clickable robot, layers, teardown
+│   │   ├── deepLearning.js     # Deep Learning tab: stack diagram, chart, task trace
+│   │   ├── deepLearning.content.js  # model requirements, agents, traces, pipeline
+│   │   ├── simulation.js       # Simulation tab: world, grab-and-throw, gravity/friction
+│   │   └── tabs.css
 │   ├── sim/
-│   │   └── mujoco.js           # load WASM + model files, step physics, push
+│   │   └── mujoco.js           # load WASM + model files once; compile scenes; step physics
 │   ├── viewer/
 │   │   ├── renderer.js         # Three.js scene, MuJoCo → Three.js sync, exploded view
 │   │   ├── layers.js           # actuator / sensor / compute overlay markers
@@ -117,7 +125,7 @@ vela/
 │       ├── teardown.json       # explainer text for the torso's internal components
 │       └── panel.js            # info panel + live telemetry
 ├── public/
-│   └── models/unitree_g1/      # MJCF + meshes + manifest.json
+│   └── models/unitree_g1/      # MJCF + meshes + manifest.json (world.xml = Simulation scene)
 ├── scripts/make-manifest.mjs   # lists model files for the browser loader
 └── .github/workflows/deploy.yml
 ```
@@ -127,6 +135,10 @@ Planned for later phases: `src/control/` (PD + ONNX policies), `src/agents/` (ag
 ---
 
 ## Controls
+
+The site has three tabs: **Anatomy**, **Deep Learning** and **Simulation** (links: `#anatomy`, `#deep-learning`, `#simulation`).
+
+**Anatomy**
 
 | Action | How |
 |---|---|
@@ -140,6 +152,16 @@ Planned for later phases: `src/control/` (PD + ONNX policies), `src/agents/` (ag
 | Open the torso | **T**, **Open torso**, or *Open it up* in the Torso panel (the slider then scrubs the teardown) |
 | Overlay layers | **Actuators**, **Sensors**, **Compute** buttons |
 | See-through shell | **X** or **X-ray** |
+
+**Simulation**
+
+| Action | How |
+|---|---|
+| Grab / throw an object | Drag any colored object (a spring pulls it to the cursor) |
+| Pause / reset | **Space** / **R**, or the Physics buttons |
+| Gravity | Earth · Mars · Moon · Zero-G |
+| Friction | Slider (0.05×–1.5×) |
+| Experiments | Tip the dominoes, knock the tower, roll the ball, sweep the table |
 
 The robot holds its pose with stiff joint position control only: no balance controller yet. That's why a shove knocks it over. Adding a learned balance and walking policy is Phase 6.
 
@@ -187,8 +209,9 @@ Pushing to `main` builds the site and deploys it to GitHub Pages via `.github/wo
 - [x] **Phase 3:** Anatomy Explorer (picking, info panels, exploded view, system layers)
 - [x] **Phase 3b:** Torso teardown (internal components explained)
 - [ ] **Phase 3c:** Teardowns for the head, legs and arm actuators
-- [ ] **Phase 4:** Compute & AI Pipeline explainer
-- [ ] **Phase 5:** Physics Sandbox with interactive objects
+- [x] **Phase 4:** Deep Learning tab: model requirements + orchestrator architecture
+- [x] **Phase 5a:** Simulation tab: physics world with interactive objects
+- [ ] **Phase 5b:** Robot tasks in the world (reach, grasp, push)
 - [ ] **Phase 6:** Trained walking/reaching policies exported to ONNX
 - [ ] **Phase 7:** Multi-agent orchestrator backend + Agent Console + Replay Mode
 

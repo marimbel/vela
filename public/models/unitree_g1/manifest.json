@@ -54,6 +54,7 @@
     "g1.xml",
     "g1_with_hands.xml",
     "scene.xml",
-    "scene_with_hands.xml"
+    "scene_with_hands.xml",
+    "world.xml"
   ]
 }
