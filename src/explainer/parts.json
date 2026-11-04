@@ -1,0 +1,206 @@
+{
+  "parts": {
+    "pelvis": {
+      "title": "Pelvis (Floating Base)",
+      "system": "Structure",
+      "summary": "The root of the robot's body. Every other part hangs off the pelvis in a tree: legs below, waist and torso above.",
+      "build": "A rigid frame that houses the hip motor mounts and an IMU. In the model it connects to the world with a 6-degree-of-freedom 'free joint', so the robot is not bolted down. It has to balance itself.",
+      "sim": "Because the base is floating, the controller can't directly command where the robot is. It can only move its joints and rely on contact forces with the ground. That is what makes legged robots hard.",
+      "ai": "Locomotion policies use the pelvis IMU (orientation, angular velocity) as one of their most important inputs."
+    },
+    "hip_pitch": {
+      "title": "Hip Pitch Joint",
+      "system": "Actuation",
+      "summary": "Swings the leg forward and backward, the main motion for walking and climbing stairs.",
+      "build": "A high-torque motor with a gearbox, mounted on the pelvis. It's the first of three hip joints, which together act like a human ball-and-socket hip.",
+      "sim": "Modeled as a hinge joint with range limits and a position actuator: the controller sends a target angle and a PD loop turns it into torque, capped at the motor's torque limit.",
+      "ai": "A walking policy outputs a target angle for this joint about 50 times a second."
+    },
+    "hip_roll": {
+      "title": "Hip Roll Joint",
+      "system": "Actuation",
+      "summary": "Moves the leg out to the side. Essential for shifting weight from one foot to the other.",
+      "build": "One of the highest-torque joints on the robot, because it holds up the whole body during single-leg stance.",
+      "sim": "Side-to-side balance depends heavily on this joint. If its torque limit is set too low in simulation, the robot collapses sideways while walking.",
+      "ai": "Learned policies use hip roll to catch lateral pushes. Try the Push button and watch the actuation layer."
+    },
+    "hip_yaw": {
+      "title": "Hip Yaw Joint",
+      "system": "Actuation",
+      "summary": "Twists the leg about its vertical axis, so the robot can turn in place and point its feet.",
+      "build": "Sits between the hip roll joint and the thigh. Stacking pitch, roll and yaw axes gives the hip three degrees of freedom.",
+      "sim": "Joint order matters: the kinematic chain is pitch → roll → yaw, and the model's joint axes must match the real hardware exactly.",
+      "ai": "Turning commands (yaw rate) are mostly produced by coordinated hip-yaw motion."
+    },
+    "knee": {
+      "title": "Knee Joint",
+      "system": "Actuation",
+      "summary": "Bends the leg. It carries the most load when crouching, standing up or landing.",
+      "build": "A single-axis hinge driven by a high-torque motor. The thigh and shin links are among the heaviest leg parts.",
+      "sim": "This demo holds the knees straight under stiff position control, so the robot stands like a statue. Walking controllers keep the knees slightly bent instead, so the legs can flex to absorb bumps and pushes.",
+      "ai": "Knee torque is a common term in reward functions. Penalizing it encourages energy-efficient gaits."
+    },
+    "ankle_pitch": {
+      "title": "Ankle Pitch Joint",
+      "system": "Actuation",
+      "summary": "Tilts the foot up and down, adjusting balance through the toes and heel.",
+      "build": "A lightweight link. Many humanoids place the ankle motors higher up the shin and drive the ankle through linkages to keep the feet light.",
+      "sim": "Small ankle adjustments move the center of pressure under the foot, a key mechanism for standing balance.",
+      "ai": "Fine balance corrections often show up as small, fast ankle-pitch changes in a learned policy."
+    },
+    "ankle_roll": {
+      "title": "Ankle Roll Joint & Foot",
+      "system": "Structure",
+      "summary": "Tilts the foot side to side and carries the foot itself, the robot's only contact with the ground.",
+      "build": "The foot is a rigid sole. In this model, the foot's contact with the floor uses four small collision spheres at its corners instead of the detailed mesh, which keeps contact stable and fast.",
+      "sim": "Foot friction (0.6 here) and contact settings decide whether the robot slips. Getting contact right is one of the hardest parts of sim-to-real transfer.",
+      "ai": "Foot-contact states (touching or not) are often given to the policy or used in the reward to shape the gait."
+    },
+    "waist_yaw": {
+      "title": "Waist Yaw Joint",
+      "system": "Actuation",
+      "summary": "Rotates the upper body relative to the hips, like twisting at the waist.",
+      "build": "The first of three waist joints connecting the pelvis to the torso.",
+      "sim": "Rotating the torso shifts angular momentum, which helps balance while walking and extends how far the arms can reach.",
+      "ai": "Manipulation policies use waist yaw to point the whole upper body toward a target."
+    },
+    "waist_roll": {
+      "title": "Waist Roll Joint",
+      "system": "Actuation",
+      "summary": "Leans the torso side to side.",
+      "build": "A compact joint between waist yaw and waist pitch.",
+      "sim": "The torso is the heaviest single part, so small waist motions move the robot's center of mass a lot.",
+      "ai": "Whole-body controllers coordinate waist roll with the hips to keep the center of mass over the feet."
+    },
+    "torso": {
+      "title": "Torso",
+      "system": "Structure",
+      "summary": "The robot's core: the largest and heaviest part. It holds the battery, the compute boards and the main IMU, and carries the shoulders and head.",
+      "build": "A structural shell around internal electronics. On the real G1 the battery and onboard computers live here. Turn on the Compute layer to see where.",
+      "sim": "Its mass and center of mass dominate the robot's balance. If the model's torso inertia is wrong, every controller tuned in simulation will behave differently on hardware.",
+      "ai": "The torso IMU is a primary input for balance and walking policies."
+    },
+    "head": {
+      "title": "Head & Sensor Suite",
+      "system": "Sensing",
+      "summary": "The robot's eyes. On the real G1 the head houses a depth camera and a 3D LiDAR.",
+      "build": "Fixed rigidly to the torso in this model (no neck joint). Sensors sit high up for the widest field of view.",
+      "sim": "Simulated cameras render RGB and depth images from the robot's viewpoint. That's how perception models are trained and tested in simulation before running on hardware.",
+      "ai": "Camera frames feed perception models (object detection, segmentation, pose estimation) that tell the planner what is in the scene."
+    },
+    "logo": {
+      "title": "Chest Panel",
+      "system": "Structure",
+      "summary": "A cosmetic panel on the front of the torso.",
+      "build": "Visual-only geometry. It has no mass and no collisions in the simulation.",
+      "sim": "Separating 'visual' meshes from simplified 'collision' shapes keeps the physics fast while the robot still looks detailed.",
+      "ai": "Not used by the AI, but a good example of visual-only geometry."
+    },
+    "shoulder_pitch": {
+      "title": "Shoulder Pitch Joint",
+      "system": "Actuation",
+      "summary": "Raises the arm forward and back.",
+      "build": "Mounted on the torso. It's the first of three shoulder joints that together act like a ball-and-socket.",
+      "sim": "Arm motors have much lower torque limits than leg motors, because arms carry far less weight.",
+      "ai": "Reaching and grasping skills drive the shoulder joints to place the hand where the planner wants it."
+    },
+    "shoulder_roll": {
+      "title": "Shoulder Roll Joint",
+      "system": "Actuation",
+      "summary": "Lifts the arm out to the side.",
+      "build": "The second shoulder axis, between shoulder pitch and shoulder yaw.",
+      "sim": "Self-collision matters here: the arm must not pass through the torso. The collision geometry prevents that in simulation.",
+      "ai": "Inverse kinematics solvers turn a target hand position into shoulder, elbow and wrist angles."
+    },
+    "shoulder_yaw": {
+      "title": "Shoulder Yaw Joint",
+      "system": "Actuation",
+      "summary": "Rotates the upper arm about its own axis.",
+      "build": "Housed in the upper-arm link.",
+      "sim": "Three shoulder axes plus the elbow and three wrist axes give each arm 7 degrees of freedom, like a human arm.",
+      "ai": "With 7 DoF there are many arm poses for one hand pose. Policies pick the one that avoids obstacles."
+    },
+    "elbow": {
+      "title": "Elbow Joint",
+      "system": "Actuation",
+      "summary": "Bends the arm.",
+      "build": "A single-axis hinge between the upper arm and the forearm.",
+      "sim": "In this standing pose, position control holds the elbows bent. Click it and watch the live angle and torque.",
+      "ai": "Elbow bend controls how far the hand reaches. It's central to every manipulation skill."
+    },
+    "wrist_roll": {
+      "title": "Wrist Roll Joint",
+      "system": "Actuation",
+      "summary": "Rotates the forearm and hand, like turning a doorknob.",
+      "build": "The first of three wrist axes.",
+      "sim": "Wrist motors are small and low torque. Their limits decide how heavy an object the hand can twist.",
+      "ai": "Grasp planners choose a wrist rotation that lines the hand up with the object."
+    },
+    "wrist_pitch": {
+      "title": "Wrist Pitch Joint",
+      "system": "Actuation",
+      "summary": "Tilts the hand up and down.",
+      "build": "The second wrist axis.",
+      "sim": "Its torque limit is among the lowest on the robot, because it only needs to move the hand.",
+      "ai": "Fine orientation adjustments right before a grasp happen here."
+    },
+    "wrist_yaw": {
+      "title": "Wrist Yaw Joint",
+      "system": "Actuation",
+      "summary": "Swings the hand side to side.",
+      "build": "The last wrist axis, which carries the hand.",
+      "sim": "Completes the 7-DoF arm.",
+      "ai": "Teleoperation systems map a human operator's wrist motion straight onto these three joints."
+    },
+    "hand": {
+      "title": "Hand (End Effector)",
+      "system": "Structure",
+      "summary": "The part that touches the world during manipulation.",
+      "build": "This model uses a simple rubber hand. Dexterous versions with multi-fingered hands also exist.",
+      "sim": "Manipulation in simulation depends on hand-object contact: friction, collision shape and grip force.",
+      "ai": "The orchestrator's manipulation agent ultimately decides where this hand goes and when it closes."
+    }
+  },
+  "markers": {
+    "imu": {
+      "title": "Inertial Measurement Unit (IMU)",
+      "system": "Sensing",
+      "summary": "Measures angular velocity (gyroscope) and linear acceleration (accelerometer). The robot's inner ear.",
+      "build": "The G1 model has two IMUs: one in the pelvis and one in the torso. Both are simulated with realistic noise.",
+      "sim": "Simulated IMU readings include noise so that policies trained in simulation don't rely on perfect data.",
+      "ai": "Almost every locomotion policy takes IMU orientation and angular velocity as input."
+    },
+    "foot": {
+      "title": "Foot Contact Point",
+      "system": "Sensing",
+      "summary": "Where the foot meets the ground. Contact forces here hold the whole robot up.",
+      "build": "A reference site at the sole of each foot. Real robots often estimate contact from motor torques or use force sensors.",
+      "sim": "The physics engine solves contact forces every timestep (500 times a second here).",
+      "ai": "Knowing which foot is on the ground is important for gait timing."
+    },
+    "camera": {
+      "title": "Depth Camera + LiDAR",
+      "system": "Sensing",
+      "summary": "Vision sensors in the head that give the robot color images, per-pixel depth and a 3D point cloud of its surroundings.",
+      "build": "Mounted in the head, facing forward and down toward the workspace.",
+      "sim": "Simulated cameras render images from this viewpoint. Domain randomization (varying lighting, textures and colors) helps models trained on synthetic images work on real ones.",
+      "ai": "Pipeline: camera frame → perception network (detection or segmentation, ~10–30 Hz on the GPU) → object positions → planner."
+    },
+    "compute": {
+      "title": "Onboard Compute",
+      "system": "Compute",
+      "summary": "The robot's brains, split by job: real-time motor control on one side, AI models on the other.",
+      "build": "Humanoids typically pair a real-time control computer with an AI computer such as an NVIDIA Jetson-class module (GPU plus deep-learning accelerators). Some designs add TPUs or NPUs for efficient neural-network inference.",
+      "sim": "In simulation, the same software stack runs on your PC. The physics engine takes the place of the motors and sensors.",
+      "ai": "Edge accelerators run neural networks with low latency and low power. Small control policies at ~50 Hz and perception models at ~10–30 Hz run onboard. Large language models for high-level planning often run in the cloud or on a bigger offboard computer."
+    },
+    "actuator": {
+      "title": "Joint Actuator",
+      "system": "Actuation",
+      "summary": "An electric motor plus gearbox that drives one joint. Each ring's brightness shows how hard that motor is working right now.",
+      "build": "Each actuator has an encoder (measures angle), a motor driver (controls current) and a gear reduction that trades speed for torque.",
+      "sim": "Modeled as a position servo: torque = kp × (target − angle) − kd × velocity, capped at the motor's torque limit.",
+      "ai": "Policies output joint targets, and low-level PD loops running at hundreds of Hz turn them into torques."
+    }
+  }
+}

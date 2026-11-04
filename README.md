@@ -34,7 +34,7 @@ VELA is a full-body humanoid robot that lives entirely in your browser. The proj
 
 - **Rendering:** [Three.js](https://threejs.org/)
 - **Physics:** [MuJoCo](https://github.com/google-deepmind/mujoco) via WebAssembly (`@mujoco/mujoco`)
-- **Robot model:** Humanoid from [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) (see [Licensing](#licensing))
+- **Robot model:** Unitree G1 (29 DoF) from [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) (see [Licensing](#licensing))
 - **Policy inference (browser):** [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/)
 - **Policy training (offline):** Isaac Lab / MuJoCo (Python)
 - **Agent backend:** Node.js + Express on Google Cloud Run
@@ -102,29 +102,48 @@ Each robot model in this project is checked against the following before use:
 vela/
 ├── index.html
 ├── src/
-│   ├── main.js                 # app entry, routing between modules
+│   ├── main.js                 # app entry: UI wiring, selection, main loop
+│   ├── style.css
 │   ├── sim/
-│   │   ├── mujoco.js           # load WASM, step physics
-│   │   └── sceneSync.js        # MuJoCo → Three.js transforms
+│   │   └── mujoco.js           # load WASM + model files, step physics, push
 │   ├── viewer/
-│   │   ├── renderer.js         # Three.js scene, camera, lights
-│   │   ├── picking.js          # raycasting + highlight
-│   │   └── explode.js          # exploded-view animation
-│   ├── explainer/
-│   │   ├── parts.json          # body name → title, description, specs
-│   │   └── pipeline.js         # compute/data-flow animation
-│   ├── control/
-│   │   ├── pd.js               # joint PD controller
-│   │   └── policy.js           # ONNX policy inference
-│   └── agents/
-│       ├── client.js           # calls agent backend
-│       └── replays/            # recorded agent runs (JSON)
+│   │   ├── renderer.js         # Three.js scene, MuJoCo → Three.js sync, exploded view
+│   │   ├── layers.js           # actuator / sensor / compute overlay markers
+│   │   └── picking.js          # raycast hover + click selection
+│   └── explainer/
+│       ├── parts.json          # explainer text for every part and marker
+│       └── panel.js            # info panel + live telemetry
 ├── public/
-│   └── models/                 # MJCF + meshes
-├── backend/                    # Express agent service (Cloud Run)
-├── training/                   # Python: policy training + ONNX export
+│   └── models/unitree_g1/      # MJCF + meshes + manifest.json
+├── scripts/make-manifest.mjs   # lists model files for the browser loader
 └── .github/workflows/deploy.yml
 ```
+
+Planned for later phases: `src/control/` (PD + ONNX policies), `src/agents/` (agent client, replays), `backend/` (Express agent service on Cloud Run), and `training/` (Python policy training + ONNX export).
+
+---
+
+## Controls
+
+| Action | How |
+|---|---|
+| Learn about a part | Click it on the robot, or pick it from the **Parts** list |
+| Orbit / zoom | Drag / scroll |
+| Pause or resume physics | **Space** or ❚❚ |
+| Reset to standing | **R** or ↺ |
+| Small push (robot recovers) | **N** or **Nudge** |
+| Big push (robot falls) | **S** or **Shove** |
+| Exploded view | **E** or the **Explode** slider |
+| Overlay layers | **Actuators**, **Sensors**, **Compute** buttons |
+| See-through shell | **X** or **X-ray** |
+
+The robot holds its pose with stiff joint position control only: no balance controller yet. That's why a shove knocks it over. Adding a learned balance and walking policy is Phase 6.
+
+### Adding another robot
+
+1. Copy a model folder (MJCF + `assets/`) into `public/models/<robot>/`.
+2. Run `npm run manifest`.
+3. Point `MODEL_URL` in `src/main.js` at the new folder and add entries to `parts.json`.
 
 ---
 
@@ -141,9 +160,9 @@ cd vela
 npm install
 npm run dev
 ```
-Open http://localhost:5173.
+Open http://localhost:5173/vela/.
 
-### Run the agent backend (optional)
+### Run the agent backend (Phase 7, coming later)
 ```bash
 cd backend
 npm install
@@ -159,9 +178,9 @@ Pushing to `main` builds the site and deploys it to GitHub Pages via `.github/wo
 
 ## Roadmap
 
-- [ ] **Phase 1:** Vite + Three.js site deployed to GitHub Pages
-- [ ] **Phase 2:** Humanoid loaded in MuJoCo WASM, standing under PD control
-- [ ] **Phase 3:** Anatomy Explorer (picking, info panels, exploded view, system layers)
+- [x] **Phase 1:** Vite + Three.js site deployed to GitHub Pages
+- [x] **Phase 2:** Humanoid loaded in MuJoCo WASM, standing under PD control
+- [x] **Phase 3:** Anatomy Explorer (picking, info panels, exploded view, system layers)
 - [ ] **Phase 4:** Compute & AI Pipeline explainer
 - [ ] **Phase 5:** Physics Sandbox with interactive objects
 - [ ] **Phase 6:** Trained walking/reaching policies exported to ONNX
@@ -172,12 +191,13 @@ Pushing to `main` builds the site and deploys it to GitHub Pages via `.github/wo
 ## Licensing
 
 Project code is released under the MIT License (see `LICENSE`).
-Third-party robot models and meshes keep their original licenses. See `public/models/<robot>/LICENSE` and check them before redistributing.
+Third-party robot models and meshes keep their original licenses. The Unitree G1 model is © Unitree Robotics, BSD-3-Clause. See `public/models/unitree_g1/LICENSE`.
 
 ---
 
 ## Acknowledgments
 
 - Google DeepMind for MuJoCo and MuJoCo Menagerie
+- Unitree Robotics for the G1 robot model
 - The Three.js community
 - NVIDIA Isaac Lab

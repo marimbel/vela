@@ -1,0 +1,31 @@
+{
+  "name": "vela",
+  "version": "1.0.0",
+  "description": "VELA — interactive humanoid robot explainer and physics simulation in the browser",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "manifest": "node scripts/make-manifest.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marimbel/vela.git"
+  },
+  "keywords": [],
+  "author": "Marianna Belmares",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/marimbel/vela/issues"
+  },
+  "homepage": "https://github.com/marimbel/vela#readme",
+  "dependencies": {
+    "@mujoco/mujoco": "^3.17.0",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  },
+  "type": "module",
+  "private": true
+}
