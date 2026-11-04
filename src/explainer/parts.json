@@ -22,7 +22,7 @@
       "summary": "Moves the leg out to the side. Essential for shifting weight from one foot to the other.",
       "build": "One of the highest-torque joints on the robot, because it holds up the whole body during single-leg stance.",
       "sim": "Side-to-side balance depends heavily on this joint. If its torque limit is set too low in simulation, the robot collapses sideways while walking.",
-      "ai": "Learned policies use hip roll to catch lateral pushes. Try the Push button and watch the actuation layer."
+      "ai": "Learned policies use hip roll to catch lateral pushes. Try the Nudge button with the Actuators layer on and watch these rings flare."
     },
     "hip_yaw": {
       "title": "Hip Yaw Joint",
